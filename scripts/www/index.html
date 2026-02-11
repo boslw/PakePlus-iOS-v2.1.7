@@ -1,88 +1,732 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DUOKO · 深蓝光晕 · 天青渐变</title>
+<link rel="dns-prefetch" href="//duoko.cc.cd">
+    <link rel="preconnect" href="//duoko.cc.cd">
+    <link rel="preconnect" href="https://duoko.cc.cd">
+    <link rel="preconnect" href="http://duoko.cc.cd">
+    
+    <script>
+      (function() {
+        "use strict";
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
+        // ----- 配置（已修改为 duoko.cc.cd）-----
+        const DOMAIN = 'duoko.cc.cd';
+        const HTTPS_URL = 'https://' + DOMAIN;
+        const HTTP_URL  = 'http://' + DOMAIN;
+        const TIMEOUT   = 3000; // 3秒内无响应则认为HTTPS不可用
+        const REDIRECT_DELAY = 5000; // 5秒后跳转
+
+        // ----- 存储最终可用URL -----
+        let finalTargetUrl = null;
+        let redirectTimer = null;
+
+        // ----- 预加载函数：静默探测 + 资源预拉取 -----
+        function preloadDuokou() {
+          // 1. 首先尝试预连接
+          addLink('dns-prefetch', '//' + DOMAIN);
+          addLink('preconnect', '//' + DOMAIN);
+          addLink('preconnect', 'https://' + DOMAIN);
+          addLink('preconnect', 'http://' + DOMAIN);
+
+          // 2. 智能探测：HTTPS是否可用？
+          detectHttpsAvailability(function(isHttpsAvailable) {
+            finalTargetUrl = isHttpsAvailable ? HTTPS_URL : HTTP_URL;
+            
+            // 3. 根据可用协议进行预加载
+            console.log('[DUOKO] 使用协议: ' + (isHttpsAvailable ? 'HTTPS' : 'HTTP') + '，5秒后跳转至 ' + finalTargetUrl);
+            
+            // 预解析最终使用的协议
+            addLink('dns-prefetch', '//' + DOMAIN);
+            addLink('preconnect', finalTargetUrl);
+            
+            // 预加载关键资源（可根据实际路径修改）
+            preloadResource(finalTargetUrl + '/', 'document');              // 主页
+           // preloadResource(finalTargetUrl + '/static/main.css', 'style');  // 样式（示例）
+          // preloadResource(finalTargetUrl + '/static/main.js', 'script');  // 脚本（示例）
+          //  preloadResource(finalTargetUrl + '/static/logo.png', 'image');  // Logo（示例）
+          });
+        }
+
+        // ----- 探测 HTTPS 可用性（静默，无用户感知）-----
+        function detectHttpsAvailability(callback) {
+          const img = new Image();
+          let isResolved = false;
+          
+          img.onload = function() {
+            if (!isResolved) {
+              isResolved = true;
+              callback(true);
+            }
+          };
+          
+          img.onerror = function() {
+            if (!isResolved) {
+              isResolved = true;
+              callback(false);
+            }
+          };
+          
+          const timer = setTimeout(function() {
+            if (!isResolved) {
+              isResolved = true;
+              img.src = '';
+              callback(false);
+            }
+          }, TIMEOUT);
+          
+          // 添加时间戳防止缓存
+          img.src = HTTPS_URL + '/favicon.ico?t=' + Date.now();
+        }
+
+        // ----- 辅助函数：动态添加 <link> 预加载标签 -----
+        function addLink(rel, href) {
+          if (!href || !rel) return;
+          
+          const existing = document.querySelector(`link[rel="${rel}"][href="${href}"]`);
+          if (existing) return;
+          
+          const link = document.createElement('link');
+          link.rel = rel;
+          link.href = href;
+          
+          if (rel === 'preload') {
+            link.as = 'document';
+          }
+          
+          document.head.appendChild(link);
+        }
+
+        // ----- 预加载具体资源（使用preload）-----
+        function preloadResource(href, asType) {
+          if (!href || !asType) return;
+          
+          const existing = document.querySelector(`link[rel="preload"][href="${href}"]`);
+          if (existing) return;
+          
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.href = href;
+          link.as = asType;
+          
+          if (href.startsWith('https://') || href.startsWith('http://')) {
+            link.crossOrigin = 'anonymous';
+          }
+          
+          document.head.appendChild(link);
+        }
+
+        // ----- 5秒跳转函数 -----
+        function startRedirectCountdown() {
+          // 显示跳转倒计时（可选）
+          console.log('[DUOKO] 5秒后跳转至 ' + (finalTargetUrl || HTTP_URL));
+          
+          // 清除已有定时器
+          if (redirectTimer) {
+            clearTimeout(redirectTimer);
+          }
+          
+          // 设置5秒后跳转
+          redirectTimer = setTimeout(function() {
+            const targetUrl = finalTargetUrl || HTTP_URL; // 如果探测未完成，默认HTTP
+            window.location.href = targetUrl;
+          }, REDIRECT_DELAY);
+        }
+
+        // ----- 初始化 -----
+        function init() {
+          // 开始预加载和探测
+          preloadDuokou();
+          
+          // 启动5秒跳转倒计时
+          startRedirectCountdown();
+          
+          // 如果探测在跳转前完成，更新finalTargetUrl即可，跳转时使用最新值
+        }
+
+        // ----- 页面加载完成后执行 -----
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setTimeout(init, 0);
+        } else {
+          window.addEventListener('DOMContentLoaded', init);
+        }
+      })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ---------- 全局重置 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            width: 100%;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ---------- 粒子画布 ---------- */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            display: block;
+        }
+
+        /* ---------- 主容器 ---------- */
+        .splash-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 20;
+            perspective: 1200px;
+        }
+
+        /* ---------- 翻转卡片核心 ---------- */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: auto;
+            perspective: 1600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 0.2rem;
+            pointer-events: none;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            transform-style: preserve-3d;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 初始状态：背面朝上 */
+            transform: rotateY(180deg) scale(0.85);
+            opacity: 0.6;
+            /* 翻转动画：只执行一次 */
+            animation: perfectFlip 3.2s cubic-bezier(0.23, 0.88, 0.32, 1) forwards;
+        }
+
+        @keyframes perfectFlip {
+            0% { transform: rotateY(180deg) scale(0.85); opacity: 0.6; }
+            30% { transform: rotateY(135deg) scale(0.9); opacity: 0.8; }
+            60% { transform: rotateY(45deg) scale(0.97); opacity: 0.95; }
+            80% { transform: rotateY(10deg) scale(0.99); opacity: 1; }
+            100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+        }
+
+        /* 正面LOGO - 动画序列：
+           第一阶段：从暗到白（0s-3s）- 使用深蓝色光晕
+           第二阶段：从白到天青斜向渐变（3s-6s）- 保持深蓝色光晕 */
+        .duoko-logo-front {
+            display: inline-block;
+            font-size: clamp(4.5rem, 18vw, 13rem);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            line-height: 1;
+            word-break: break-word;
+            max-width: 100%;
+            padding: 0 0.1em;
+            backface-visibility: hidden;
+            transform: translateZ(20px);
+            
+            /* 初始暗色 - 深蓝色光晕 */
+            color: #2a2a2a;
+            text-shadow: 0 0 8px rgba(0, 0, 139, 0.3), 0 0 15px rgba(25, 25, 112, 0.2);
+            
+            /* 动画序列：0-3s变亮（深蓝光晕），3-6s天青渐变（深蓝光晕） */
+            animation: 
+                frontGlow 3s ease-out 0.6s forwards,
+                skyGradient 3s ease-in-out 3.8s forwards;
+        }
+
+        /* 第一阶段：暗灰 → 亮白金属 - 使用深蓝色光晕 */
+        @keyframes frontGlow {
+            0% {
+                color: #2a2a2a;
+                text-shadow: 0 0 8px rgba(0, 0, 139, 0.2), 0 0 15px rgba(25, 25, 112, 0.15);
+                background: none;
+            }
+            40% {
+                color: #7a7a7a;
+                text-shadow: 0 0 20px rgba(0, 0, 139, 0.4), 0 0 35px rgba(25, 25, 112, 0.3), 0 0 50px rgba(0, 0, 205, 0.2);
+            }
+            80% {
+                color: #e0e0e0;
+                text-shadow: 0 0 30px rgba(0, 0, 139, 0.7), 0 0 55px rgba(25, 25, 112, 0.5), 0 0 80px rgba(0, 0, 205, 0.3);
+            }
+            100% {
+                color: #ffffff;
+                text-shadow: 0 0 40px rgba(0, 0, 139, 0.9), 0 0 70px rgba(25, 25, 112, 0.7), 0 0 100px rgba(0, 0, 205, 0.5);
+                background: linear-gradient(145deg, #ffffff 80%, #d0e0ff 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+        }
+
+        /* 第二阶段：亮白 → 斜向天青渐变 - 保持深蓝色光晕 */
+        @keyframes skyGradient {
+            0% {
+                background: linear-gradient(145deg, #ffffff 80%, #d0e0ff 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 40px rgba(0, 0, 139, 0.9), 0 0 70px rgba(25, 25, 112, 0.7), 0 0 100px rgba(0, 0, 205, 0.5);
+            }
+            30% {
+                background: linear-gradient(45deg, #ffffff, #b5e4ff, #7ec8ff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 45px rgba(0, 0, 139, 0.9), 0 0 80px rgba(25, 25, 112, 0.7), 0 0 120px rgba(0, 0, 205, 0.5);
+            }
+            70% {
+                background: linear-gradient(45deg, #e6f7ff, #87cefa, #4aa5ff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 50px rgba(0, 0, 139, 0.9), 0 0 90px rgba(25, 25, 112, 0.7), 0 0 140px rgba(0, 0, 205, 0.5);
+            }
+            100% {
+                /* 最终天青色斜向渐变 - 45度，从浅天青到深天青 */
+                background: linear-gradient(45deg, #a0d8ff, #64b5f6, #1e88e5);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                /* 深蓝色光晕 - 午夜蓝、海军蓝、深宝蓝 */
+                text-shadow: 
+                    0 0 40px rgba(0, 0, 139, 0.9), 
+                    0 0 80px rgba(25, 25, 112, 0.8), 
+                    0 0 120px rgba(0, 0, 205, 0.6),
+                    0 0 160px rgba(0, 0, 128, 0.4);
+            }
+        }
+
+        /* 背面LOGO - 同样深蓝色光晕 + 天青渐变 */
+        .duoko-logo-back {
+            display: inline-block;
+            font-size: clamp(4.5rem, 18vw, 13rem);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            line-height: 1;
+            word-break: break-word;
+            max-width: 100%;
+            padding: 0 0.1em;
+            backface-visibility: hidden;
+            transform: rotateY(180deg) translateZ(25px);
+            
+            /* 初始暗蓝灰 - 深蓝色光晕 */
+            color: #1a2a33;
+            text-shadow: 0 0 8px rgba(0, 0, 139, 0.3), 0 0 15px rgba(25, 25, 112, 0.2);
+            
+            /* 背面动画：变亮 + 天青渐变 - 深蓝色光晕 */
+            animation: 
+                backGlow 3s ease-out 0.6s forwards,
+                backSkyGradient 3s ease-in-out 3.8s forwards;
+        }
+
+        @keyframes backGlow {
+            0% {
+                color: #1a2a33;
+                text-shadow: 0 0 8px rgba(0, 0, 139, 0.2), 0 0 15px rgba(25, 25, 112, 0.15);
+                background: none;
+            }
+            40% {
+                color: #4a6a7a;
+                text-shadow: 0 0 20px rgba(0, 0, 139, 0.4), 0 0 35px rgba(25, 25, 112, 0.3), 0 0 50px rgba(0, 0, 205, 0.2);
+            }
+            80% {
+                color: #c0e0f0;
+                text-shadow: 0 0 35px rgba(0, 0, 139, 0.7), 0 0 55px rgba(25, 25, 112, 0.5), 0 0 75px rgba(0, 0, 205, 0.3);
+            }
+            100% {
+                color: #e0f0ff;
+                text-shadow: 0 0 40px rgba(0, 0, 139, 0.9), 0 0 70px rgba(25, 25, 112, 0.7), 0 0 100px rgba(0, 0, 205, 0.5);
+                background: linear-gradient(145deg, #ffffff, #c0e4ff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+        }
+
+        @keyframes backSkyGradient {
+            0% {
+                background: linear-gradient(145deg, #ffffff, #c0e4ff);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 40px rgba(0, 0, 139, 0.9), 0 0 70px rgba(25, 25, 112, 0.7), 0 0 100px rgba(0, 0, 205, 0.5);
+            }
+            30% {
+                background: linear-gradient(45deg, #ffffff, #b0e0ff, #6cb4ee);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 45px rgba(0, 0, 139, 0.9), 0 0 80px rgba(25, 25, 112, 0.7), 0 0 120px rgba(0, 0, 205, 0.5);
+            }
+            70% {
+                background: linear-gradient(45deg, #e0f0ff, #7ec8ff, #3a8fe0);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 50px rgba(0, 0, 139, 0.9), 0 0 90px rgba(25, 25, 112, 0.7), 0 0 140px rgba(0, 0, 205, 0.5);
+            }
+            100% {
+                background: linear-gradient(45deg, #98c8ff, #5aa9e6, #2277bb);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 
+                    0 0 40px rgba(0, 0, 139, 0.9), 
+                    0 0 80px rgba(25, 25, 112, 0.8), 
+                    0 0 120px rgba(0, 0, 205, 0.6),
+                    0 0 160px rgba(0, 0, 128, 0.4);
+            }
+        }
+
+        /* 正反面定位 */
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backface-visibility: hidden;
+        }
+
+        .flip-card-front {
+            transform: rotateY(0deg);
+            position: relative;
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+            position: absolute;
+        }
+
+        /* 装饰光带 - 深蓝色调 */
+        .glow-stripe {
+            position: absolute;
+            bottom: -10px;
+            left: 15%;
+            width: 70%;
+            height: 2.5px;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 139, 0.3), rgba(25, 25, 112, 0.4), rgba(0, 0, 139, 0.3), transparent);
+            border-radius: 100%;
+            filter: blur(2px);
+            opacity: 0.1;
+            animation: stripeGlow 3s ease-out 0.9s forwards,
+                       stripeSky 3s ease-in-out 3.8s forwards;
+            z-index: 25;
+        }
+
+        @keyframes stripeGlow {
+            0% { 
+                opacity: 0.1; 
+                width: 60%; 
+                left: 20%; 
+                background: linear-gradient(90deg, transparent, rgba(0,0,139,0.2), rgba(25,25,112,0.2), rgba(0,0,139,0.2), transparent); 
+            }
+            100% { 
+                opacity: 0.6; 
+                width: 80%; 
+                left: 10%; 
+                background: linear-gradient(90deg, transparent, rgba(0,0,139,0.6), rgba(25,25,112,0.7), rgba(0,0,139,0.6), transparent); 
+            }
+        }
+
+        @keyframes stripeSky {
+            0% { 
+                opacity: 0.6; 
+                background: linear-gradient(90deg, transparent, rgba(0,0,139,0.6), rgba(25,25,112,0.7), rgba(0,0,139,0.6), transparent); 
+            }
+            100% { 
+                opacity: 0.9; 
+                background: linear-gradient(90deg, transparent, rgba(0,0,139,0.8), rgba(0,0,205,0.9), rgba(0,0,139,0.8), transparent); 
+            }
+        }
+
+        /* 底部符号 - 深蓝色光晕 */
+        .brand-sub {
+            color: rgba(80, 80, 80, 0.4);
+            font-size: clamp(0.8rem, 3.5vw, 1.3rem);
+            font-weight: 300;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1.6px solid rgba(0, 0, 139, 0.2);
+            width: fit-content;
+            padding-left: 0.8rem;
+            padding-right: 0.8rem;
+            backdrop-filter: blur(3px);
+            animation: subGlow 3s ease-out 1.0s forwards,
+                       subSky 3s ease-in-out 3.8s forwards;
+            z-index: 15;
+        }
+
+        @keyframes subGlow {
+            0% { 
+                color: rgba(80, 80, 80, 0.4); 
+                border-top-color: rgba(0, 0, 139, 0.2); 
+                text-shadow: none;
+            }
+            100% { 
+                color: rgba(180, 200, 255, 0.9); 
+                border-top-color: rgba(0, 0, 139, 0.7); 
+                text-shadow: 0 0 10px rgba(0,0,139,0.5);
+            }
+        }
+
+        @keyframes subSky {
+            0% { 
+                color: rgba(180, 200, 255, 0.9); 
+                border-top-color: rgba(0, 0, 139, 0.7); 
+                text-shadow: 0 0 10px rgba(0,0,139,0.5);
+            }
+            100% { 
+                color: rgba(160, 216, 255, 1); 
+                border-top-color: rgba(0, 0, 139, 0.9); 
+                text-shadow: 0 0 15px rgba(0,0,139,0.8), 0 0 30px rgba(25,25,112,0.5);
+            }
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 600px) {
+            .flip-card-inner {
+                min-height: 140px;
+            }
+            .duoko-logo-front, .duoko-logo-back {
+                font-size: clamp(3.8rem, 16vw, 8rem);
+            }
+        }
+
+        @media (max-width: 380px) {
+            .duoko-logo-front, .duoko-logo-back {
+                font-size: clamp(3rem, 14vw, 5rem);
+            }
+        }
+
+        /* 所有动画只播放一次 */
+        .flip-card-inner,
+        .duoko-logo-front,
+        .duoko-logo-back,
+        .glow-stripe,
+        .brand-sub {
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+
+        /* 完全禁用所有交互 */
+        .flip-card,
+        .flip-card-inner,
+        .flip-card-front,
+        .flip-card-back {
+            pointer-events: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .flip-card-inner {
+                animation: none;
+                transform: rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+            .duoko-logo-front {
+                color: white;
+                text-shadow: 0 0 30px rgba(0,0,139,0.8);
+                animation: none;
+                background: linear-gradient(45deg, #a0d8ff, #64b5f6, #1e88e5);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="splash-container">
+        <div class="flip-card">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <div class="duoko-logo-front" aria-label="DUOKO 品牌正面">
+                        DUOKO
+                    </div>
+                </div>
+                <div class="flip-card-back">
+                    <div class="duoko-logo-back" aria-label="DUOKO 品牌背面">
+                        DUOKO
+                    </div>
+                </div>
             </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
-            </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+        </div>
+        <div class="glow-stripe"></div>
+        <div class="brand-sub" aria-hidden="true">Loading✦ ✦ ✦ ✦</div>
+<div class="brand-sub" aria-hidden="true">V 1.1.0</div>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ---------- 粒子特效：深蓝色光晕粒子 ----------
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let particles = [];
+            
+            const PARTICLE_COUNT = window.innerWidth < 600 ? 50 : 90;
+            const MAX_SIZE = 2.8;
+            const MIN_SIZE = 1.0;
+            const SPEED = 0.15;
+
+            let startTime = null;
+            const ANIMATION_DURATION = 6000;
+
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        vx: (Math.random() - 0.5) * SPEED * 1.1,
+                        vy: (Math.random() - 0.5) * SPEED * 0.9,
+                        radius: Math.random() * (MAX_SIZE - MIN_SIZE) + MIN_SIZE,
+                        baseAlpha: Math.random() * 0.25 + 0.1,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                initParticles();
+                startTime = null;
+            }
+
+            function getBrightnessFactor() {
+                if (!startTime) startTime = performance.now();
+                const elapsed = performance.now() - startTime;
+                let progress = Math.min(elapsed / ANIMATION_DURATION, 1.0);
+                return 1 - Math.pow(1 - progress, 1.5);
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                
+                const brightness = getBrightnessFactor();
+                
+                for (let p of particles) {
+                    let alpha = p.baseAlpha + brightness * 0.45;
+                    alpha = Math.min(alpha, 0.85);
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    
+                    // 深蓝色粒子渐变
+                    const gradient = ctx.createRadialGradient(p.x, p.y, 0.1, p.x, p.y, p.radius * 2);
+                    gradient.addColorStop(0, `rgba(65, 105, 225, ${alpha * 1.2})`); // 皇室蓝
+                    gradient.addColorStop(0.5, `rgba(0, 0, 139, ${alpha * 0.8})`);    // 深蓝
+                    gradient.addColorStop(1, `rgba(25, 25, 112, 0)`);                  // 午夜蓝
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // 深蓝色光晕
+                    ctx.shadowBlur = 8 * brightness;
+                    ctx.shadowColor = 'rgba(0, 0, 139, 0.6)';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            function updateParticles() {
+                for (let p of particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0 || p.x > width) {
+                        p.vx *= -0.98;
+                        p.x = Math.max(0, Math.min(width, p.x));
+                    }
+                    if (p.y < 0 || p.y > height) {
+                        p.vy *= -0.98;
+                        p.y = Math.max(0, Math.min(height, p.y));
+                    }
+
+                    if (p.x < -15 || p.x > width + 15 || p.y < -15 || p.y > height + 15) {
+                        p.x = Math.random() * width;
+                        p.y = Math.random() * height;
+                        p.vx = (Math.random() - 0.5) * SPEED * 1.1;
+                        p.vy = (Math.random() - 0.5) * SPEED * 0.9;
+                    }
+                }
+            }
+
+            function animate() {
+                if (!canvas || !ctx) return;
+                updateParticles();
+                drawParticles();
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            animate();
+
+            // 页面显示时重置所有动画
+            window.addEventListener('pageshow', function() {
+                const flipInner = document.querySelector('.flip-card-inner');
+                if (flipInner) {
+                    flipInner.style.animation = 'none';
+                    void flipInner.offsetWidth;
+                    flipInner.style.animation = 'perfectFlip 3.2s cubic-bezier(0.23, 0.88, 0.32, 1) forwards';
+                }
+                startTime = null;
+            });
+        })();
+    </script>
+</body>
 </html>
